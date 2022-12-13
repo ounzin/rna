@@ -11,7 +11,9 @@ Infos:
 👉 L'algorithme du programme principal se décompose en trois grandes étapes :
 
 🔄 l'initialisation de nos paramètres
+
 🥊 l'entrainement de nos modèles
+
 🤔 les tests
 
 Amusez vous bien ! 🎉
