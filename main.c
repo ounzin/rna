@@ -12,6 +12,7 @@
 
 #include "models.h"
 
+#define SIZEOF(arr) sizeof(arr) / sizeof(*arr)
 double LEARNING_RATE = 0.01; // default value 0.01
 
 /* OPERATORS VALUES : AND, OR, XOR */
@@ -168,7 +169,7 @@ int propagation(rna *RNA) // return output value
         x += RNA->NEURONS[0][j]->output * RNA->WEIGHT2[j][0] + RNA->BIAS2[j][0];
     }
     RNA->output = sigmoid(x);
-    if (RNA->output > 0.5)
+    if (RNA->output >= 0.5)
     {
         return 1;
     }
@@ -206,9 +207,9 @@ void back_propagation(int expected_output, rna *RNA)
 
 /* universal learning function */
 
-void learn(rna *RNA, entries *ENTRY_VECTOR[], outputs *OUTPUT_VECTOR[], boolean verbose)
+void learn(rna *RNA, char *name, entries *ENTRY_VECTOR[], outputs *OUTPUT_VECTOR[], boolean verbose)
 {
-    verbose == T ? printf("\nStart learning...\n\n") : 0;
+    verbose == T ? printf("\n") : 0;
     for (int i = 0; i < 4; i++)
     {
         set_inputs(ENTRY_VECTOR[i]->x1, ENTRY_VECTOR[i]->x2, RNA);
@@ -229,16 +230,15 @@ void learn(rna *RNA, entries *ENTRY_VECTOR[], outputs *OUTPUT_VECTOR[], boolean 
             }
 
         } while (output != OUTPUT_VECTOR[i]->y);
-        verbose == T ? printf("Example %d: %d %d -> %d (expected %d) after %d learning times \n", i, ENTRY_VECTOR[i]->x1, ENTRY_VECTOR[i]->x2, output, OUTPUT_VECTOR[i]->y, counter) : 0;
+        verbose == T ? printf("%s Example %d: %d %d -> %d (expected %d) after %d learning times \n", name, i, ENTRY_VECTOR[i]->x1, ENTRY_VECTOR[i]->x2, output, OUTPUT_VECTOR[i]->y, counter) : 0;
     }
-    verbose == T ? printf("\nEnd of learning.\n\n") : 0;
+    verbose == T ? printf("\n") : 0;
 }
 
 void train(char *name, rna *RNA, entries *ENTRY_VECTOR[], outputs *OUTPUT_VECTOR[], boolean verbose)
 {
-    printf("\n\nRNA %s running ... \n\n", name);
     init_rna(RNA);
-    learn(RNA, ENTRY_VECTOR, OUTPUT_VECTOR, verbose);
+    learn(RNA, name, ENTRY_VECTOR, OUTPUT_VECTOR, verbose);
     printf("--------------------\n");
 }
 
@@ -312,14 +312,18 @@ void free_memory(rna *RNA[]) // to avoid memory leaks
 /* end of utils functions */
 
 /*  threads functions */
-void *thread_routine(void *arg, char *name, rna *RNA, entries *ENTRY_VECTOR[], outputs *OUTPUT_VECTOR[], boolean verbose)
+void *thread_and_handler(void *arg)
 {
-    printf("\n\nThread RNA %s running ... \n\n", name);
-    init_rna(RNA);
-    learn(RNA, ENTRY_VECTOR, OUTPUT_VECTOR, verbose);
-    printf("--------------------\n");
+    train("AND", arg, AND_ENTRIES, AND_OUTPUTS, T);
     pthread_exit(NULL);
 }
+
+void *thread_xor_handler(void *arg)
+{
+    train("OR", arg, OR_ENTRIES, OR_OUTPUTS, T);
+    pthread_exit(NULL);
+}
+
 pthread_mutex_t rna_mutex_thread = PTHREAD_MUTEX_INITIALIZER;
 
 /* main program */
@@ -330,20 +334,31 @@ int main()
 
     // RNAs
     rna *RNA_AND = malloc(sizeof(rna));
-    rna *RNA_XOR = malloc(sizeof(rna));
+    rna *RNA_OR = malloc(sizeof(rna));
 
-    train("AND", RNA_AND, AND_ENTRIES, AND_OUTPUTS, T);
-    train("XOR", RNA_XOR, XOR_ENTRIES, XOR_OUTPUTS, T);
+    // we will use threads to train the RNAs
+    pthread_t thread1, thread2;
+    pthread_create(&thread1, NULL, thread_and_handler, RNA_AND);
+    pthread_create(&thread2, NULL, thread_xor_handler, RNA_OR);
+
+    pthread_mutex_lock(&rna_mutex_thread);
+    pthread_join(thread1, NULL);
+    pthread_mutex_unlock(&rna_mutex_thread);
+
+    pthread_join(thread2, NULL);
 
     /* tests */
-    printf("Testing AND ... \n");
+    printf("--------------------\nTesting ... \n");
     int x1 = 0, x2 = 0;
     set_inputs(x1, x2, RNA_AND);
-    printf("Entry %d, %d , output :  %d\n", x1, x2, propagation(RNA_AND));
-    printf("End of testing AND\n\n");
+    set_inputs(x1, x2, RNA_OR);
+    printf("Entries %d, %d\n", x1, x2);
+    printf("AND output :  %d\n", propagation(RNA_AND));
+    printf("OR output :  %d\n", propagation(RNA_OR));
+    printf("End of testing\n --------------------\n");
 
     /* free memory */
-    rna *RNAS[] = {RNA_AND, RNA_XOR};
+    rna *RNAS[] = {RNA_AND, RNA_OR};
     free_memory(RNAS);
     return 0;
 }

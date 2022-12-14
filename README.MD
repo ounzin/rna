@@ -6,7 +6,7 @@ Infos:
 
 👉 Structures : Boolean (Utilisé pour définir une verbosité), Neuron (representation d'un neurone), rna (representation d'un perceptron) entries (notre vecteur d'entrée), outputs (notre vecteur de sortie)
 
-👉 Il s'agit d'un système possedant deux RNA avec pour objectif d'apprendre deux opérations logiques. Avec deux entrées logiques, on pourra ainsi faire deux opérations logiques simultanément.
+👉 Il s'agit d'un système possedant deux RNA avec pour objectif d'apprendre deux opérations logiques à l'aide des threads. Avec deux entrées logiques, on pourra ainsi faire deux opérations logiques simultanément.
 
 👉 L'algorithme du programme principal se décompose en trois grandes étapes :
 
