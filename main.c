@@ -349,7 +349,7 @@ int main()
 
     /* tests */
     printf("--------------------\nTesting ... \n");
-    int x1 = 0, x2 = 0;
+    int x1 = 0, x2 = 1;
     set_inputs(x1, x2, RNA_AND);
     set_inputs(x1, x2, RNA_OR);
     printf("Entries %d, %d\n", x1, x2);
